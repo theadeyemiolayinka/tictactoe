@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 pub enum ResultCode {
     Success = 0,
     SuccessAnalyticsFailed = 1,
@@ -13,6 +13,7 @@ pub enum ResultCode {
     SerializationError = 72,
     EnvError = 77,
     CryptoError = 78,
+    CancelOperation = 100,
 }
 
 impl ResultCode {

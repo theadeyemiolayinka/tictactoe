@@ -19,6 +19,22 @@ impl HelperService {
         HelperService { crypt, db }
     }
 
+    pub fn generate_inquire_error(&self, e: inquire::InquireError) -> String {
+        match e {
+            inquire::InquireError::NotTTY =>
+                "Input device is not a TTY".to_string(),
+            inquire::InquireError::InvalidConfiguration(reason) =>
+                format!("Invalid configuration: {}", reason),
+            inquire::InquireError::IO(io_err) => format!("IO error: {}", io_err),
+            inquire::InquireError::OperationCanceled =>
+                "Operation canceled by the user".to_string(),
+            inquire::InquireError::OperationInterrupted =>
+                "Operation interrupted by the user".to_string(),
+            inquire::InquireError::Custom(custom_err) =>
+                format!("Custom error: {}", custom_err),
+        }
+    }
+
     pub fn update_command_usage(&self, tool: ToolsAnalytics) -> Result<(), Failure> {
         let mut analytics = self.db.get_record(&RecordKey::CommandUsage)?;
 
