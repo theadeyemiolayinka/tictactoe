@@ -4,9 +4,13 @@ use crate::{
     AppResult, Failure, commands::start::game::Player, services::config::codes::ResultCode,
 };
 
-use super::game::{GameMatrixWrapper, WinData};
+use super::game::{GameMatrix, GameMatrixWrapper, WinData};
 
 pub const TIC_TAC_TOE_PRESET: &str = "     == |--        ";
+
+pub const WIN: i32 = 10;
+pub const LOSE: i32 = -10;
+pub const DRAW: i32 = 0;
 
 pub fn clear_terminal() {
     print!("\x1B[2J\x1B[1;1H");
@@ -153,4 +157,89 @@ pub fn check_win(game_matrix: &mut GameMatrixWrapper) -> AppResult<WinData> {
     }
 
     Ok((None, vec![]))
+}
+
+// AI ACTIONS
+
+pub fn get_selectable(gm: &GameMatrix) -> u16 {
+    let mut current_selectable: u16 = 0;
+
+    for i in 0..gm.len() {
+        for &x in gm[i].iter() {
+            if x == Player::X.as_i32() {
+            } else if x == Player::O.as_i32() {
+            } else {
+                current_selectable += 1;
+            }
+        }
+    }
+    current_selectable
+}
+
+pub fn ai_select(gm: &mut GameMatrix, pos: u16, player: Player) -> Option<(usize, usize)> {
+    let mut current_selectable: u16 = 0;
+
+    for i in 0..gm.len() {
+        for (j, x) in gm[i].iter_mut().enumerate() {
+            if *x == Player::X.as_i32() {
+            } else if *x == Player::O.as_i32() {
+            } else {
+                current_selectable += 1;
+                if pos == current_selectable {
+                    *x = player.as_i32();
+                    return Some((i, j));
+                }
+            }
+        }
+    }
+    None
+}
+
+pub fn ai_unselect(gm: &mut GameMatrix, pos: (usize, usize)) {
+    gm[pos.0][pos.1] = 0
+}
+
+pub fn check_win_slim(gm: &GameMatrix) -> Option<i32> {
+    for i in 0..gm.len() {
+        if gm[i][0] == gm[i][1] && gm[i][0] == gm[i][2] && gm[i][0] != 0 {
+            return Some(gm[i][0]);
+        }
+        if gm[0][i] == gm[1][i] && gm[0][i] == gm[2][i] && gm[0][i] != 0 {
+            return Some(gm[0][i]);
+        }
+    }
+
+    if gm[0][0] == gm[1][1] && gm[0][0] == gm[2][2] && gm[0][0] != 0 {
+        return Some(gm[0][0]);
+    }
+
+    if gm[0][2] == gm[1][1] && gm[0][2] == gm[2][0] && gm[0][2] != 0 {
+        return Some(gm[0][2]);
+    }
+
+    None
+}
+
+pub fn evaluate_board(gm: &GameMatrix, player: Player) -> Option<i32> {
+    if get_selectable(gm) > 0 {
+        match check_win_slim(gm) {
+            Some(g) => match g {
+                x if x == player.as_i32() => return Some(WIN),
+                _ => return Some(LOSE),
+            },
+            None => {
+                return None;
+            }
+        }
+    } else {
+        match check_win_slim(gm) {
+            Some(g) => match g {
+                x if x == player.as_i32() => return Some(WIN),
+                _ => return Some(LOSE),
+            },
+            None => {
+                return Some(DRAW);
+            }
+        }
+    }
 }

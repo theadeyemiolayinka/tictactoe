@@ -11,6 +11,7 @@ use crate::{
 
 mod game;
 mod actions;
+mod computer;
 mod number_prompt;
 
 #[derive(Debug, Args)]

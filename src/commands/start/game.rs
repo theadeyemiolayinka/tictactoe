@@ -8,8 +8,10 @@ use crate::{
 };
 
 use super::{
-    actions::{check_win, clear_terminal, print_final_game_matrix, print_selectable_game_matrix, select_position},
-    number_prompt::NumberPrompt,
+    actions::{
+        check_win, clear_terminal, print_final_game_matrix, print_selectable_game_matrix,
+        select_position,
+    }, computer::make_move, number_prompt::NumberPrompt
 };
 
 pub type GameMatrix = [[i32; 3]; 3];
@@ -33,7 +35,7 @@ impl Default for GameMatrixWrapper {
     }
 }
 
-#[derive(ValueEnum, EnumIter, Display, Debug, Clone, Copy)]
+#[derive(ValueEnum, EnumIter, Display, Debug, Clone, Copy, PartialEq)]
 pub enum Player {
     X = 1,
     O = 2,
@@ -51,6 +53,13 @@ impl Player {
             _ => None,
         }
     }
+
+    pub fn invert(&self) -> Self {
+        match self {
+            Player::X => Player::O,
+            Player::O => Player::X,
+        }
+    }
 }
 
 pub struct PlayerTurn {
@@ -62,7 +71,7 @@ pub struct PlayerTurn {
 impl PlayerTurn {
     pub fn play(
         &mut self,
-        game_matrix: &mut GameMatrixWrapper,
+        mut game_matrix: &mut GameMatrixWrapper,
         _player: Option<Player>,
         multi_player: bool,
         helper: &HelperService,
@@ -72,7 +81,7 @@ impl PlayerTurn {
             self.game_complete = true;
             return Ok(());
         }
-        if !multi_player {
+        if multi_player {
             println!("");
             let player_turn_message = match self.player {
                 Player::X => format!("{} Turn", self.player.to_string()).red().bold(),
@@ -91,7 +100,24 @@ impl PlayerTurn {
             self.check_winner(game_matrix);
             res
         } else {
-            Ok(())
+            if _player.is_some_and(|g| g == self.player) {
+                println!("");
+                let position =
+                    NumberPrompt::prompt(format!("Select a position to play: >").as_str())
+                        .map_err(|e| Failure {
+                            message: "Invalid input".to_string(),
+                            trace: format!("Reason: {}", helper.generate_inquire_error(e)),
+                            code: ResultCode::CancelOperation,
+                        })?;
+
+                let res = select_position(game_matrix, position as u16, self.player);
+                self.check_winner(game_matrix);
+                res
+            } else {
+                make_move(&mut game_matrix, self.player);
+                self.check_winner(game_matrix);
+                Ok(())
+            }
         }
     }
 
@@ -138,7 +164,7 @@ pub fn gameloop(
         match res {
             Ok(_) => {
                 turn.change_turns();
-                clear_terminal();
+                // clear_terminal();
             }
             Err(e) => {
                 println!("{}: {}\n", e.message, e.trace);
