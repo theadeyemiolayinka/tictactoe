@@ -7,33 +7,39 @@ use super::{
     game::{GameMatrix, GameMatrixWrapper, Player},
 };
 
-pub fn make_move(gm: &mut GameMatrixWrapper, player: Player) {
+pub const EASY: u8 = 1;
+pub const NORMAL: u8 = 2;
+// pub const HARD: u8 = 3;
+
+pub fn make_move(gm: &mut GameMatrixWrapper, player: Player, difficulty: u8) {
     let possibilities = get_selectable(&gm.value());
 
     let mut check_matrix = gm.value();
 
-    // Check for an immediate win
-    for i in 1..=possibilities {
-        if let Some(pos) = ai_select(&mut check_matrix, i, player) {
-            if evaluate_board(&check_matrix, player) == Some(WIN) {
-                ai_unselect(&mut check_matrix, pos); // Undo move
-                select_position(gm, i, player).unwrap();
-                return;
+    if difficulty > EASY {
+        // Check for an immediate win
+        for i in 1..=possibilities {
+            if let Some(pos) = ai_select(&mut check_matrix, i, player) {
+                if evaluate_board(&check_matrix, player) == Some(WIN) {
+                    ai_unselect(&mut check_matrix, pos); // Undo move
+                    select_position(gm, i, player).unwrap();
+                    return;
+                }
+                ai_unselect(&mut check_matrix, pos);
             }
-            ai_unselect(&mut check_matrix, pos);
         }
-    }
 
-    // Check for an immediate block (opponent's win)
-    let opponent = player.invert();
-    for i in 1..=possibilities {
-        if let Some(pos) = ai_select(&mut check_matrix, i, opponent) {
-            if evaluate_board(&check_matrix, opponent) == Some(WIN) {
-                ai_unselect(&mut check_matrix, pos); // Undo move
-                select_position(gm, i, player).unwrap();
-                return;
+        // Check for an immediate block (opponent's win)
+        let opponent = player.invert();
+        for i in 1..=possibilities {
+            if let Some(pos) = ai_select(&mut check_matrix, i, opponent) {
+                if evaluate_board(&check_matrix, opponent) == Some(WIN) {
+                    ai_unselect(&mut check_matrix, pos); // Undo move
+                    select_position(gm, i, player).unwrap();
+                    return;
+                }
+                ai_unselect(&mut check_matrix, pos);
             }
-            ai_unselect(&mut check_matrix, pos);
         }
     }
 
@@ -44,7 +50,15 @@ pub fn make_move(gm: &mut GameMatrixWrapper, player: Player) {
     let mut action_map: Vec<(u16, i32)> = best_scores.iter().map(|g| (*g.0, *g.1)).collect();
     action_map.sort_by(|a, b| b.1.cmp(&a.1));
 
-    let selected_move = action_map[0].0;
+    let selected_move = if difficulty > NORMAL {
+        action_map[0].0
+    } else {
+        if action_map.len() > 1 {
+            action_map[1].0
+        } else {
+            action_map[0].0
+        }
+    };
     select_position(gm, selected_move, player).unwrap();
 }
 

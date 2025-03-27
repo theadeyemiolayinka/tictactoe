@@ -21,6 +21,8 @@ pub struct ArgsStart {
     player: Option<Player>,
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     multiplayer: bool,
+    #[arg(short = 'd' , long, default_value="2", help="Game Difficulty; 1 = Easy, 2 = Normal, 3 = Hard")]
+    difficulty: u8,
 }
 
 const ABOUT_START: &'static str = "Start the game";
@@ -62,7 +64,7 @@ pub fn handle(args: ArgsStart, cfg: &mut AppConfig, helper: &HelperService) -> T
         });
     }
 
-    let _result = gameloop(&mut game_matrix, player, multi_player, helper)?;
+    let _result = gameloop(&mut game_matrix, player, multi_player, args.difficulty, helper)?;
 
     match Confirm::new("Do you want to play again (Yes/No)? ").prompt() {
         Ok(g) => {

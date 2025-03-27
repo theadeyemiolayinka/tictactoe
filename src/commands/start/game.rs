@@ -74,6 +74,7 @@ impl PlayerTurn {
         mut game_matrix: &mut GameMatrixWrapper,
         _player: Option<Player>,
         multi_player: bool,
+        difficulty: u8,
         helper: &HelperService,
     ) -> AppResult<()> {
         let available_cells = print_selectable_game_matrix(game_matrix);
@@ -114,7 +115,7 @@ impl PlayerTurn {
                 self.check_winner(game_matrix);
                 res
             } else {
-                make_move(&mut game_matrix, self.player);
+                make_move(&mut game_matrix, self.player, difficulty);
                 self.check_winner(game_matrix);
                 Ok(())
             }
@@ -155,16 +156,17 @@ pub fn gameloop(
     game_matrix: &mut GameMatrixWrapper,
     player: Option<Player>,
     multi_player: bool,
+    difficulty: u8,
     helper: &HelperService,
 ) -> AppResult<()> {
     let mut turn = PlayerTurn::default();
     clear_terminal();
     loop {
-        let res = turn.play(game_matrix, player, multi_player, helper);
+        let res = turn.play(game_matrix, player, multi_player, difficulty, helper);
         match res {
             Ok(_) => {
                 turn.change_turns();
-                // clear_terminal();
+                clear_terminal();
             }
             Err(e) => {
                 println!("{}: {}\n", e.message, e.trace);
